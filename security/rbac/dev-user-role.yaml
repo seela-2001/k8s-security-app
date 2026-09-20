@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dev-user-role
+  namespace: security-app
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+   
+  - apiGroups: 
+      - apps
+    resources: 
+      - replicasets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create

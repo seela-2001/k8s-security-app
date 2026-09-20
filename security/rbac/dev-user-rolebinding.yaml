@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: 
+  name: dev-user-rolebinding
+  namespace: security-app
+subjects:
+  - kind: User
+    name: dev-user
+    apiGroup: rbac.authorization.k8s.io
+
+roleRef: 
+  kind: Role
+  name: dev-user-role
+  apiGroup: rbac.authorization.k8s.io
+  
