@@ -192,7 +192,9 @@ curl http://backend-service:5678
 
 This successfully returned the backend echo response.
 
-**Verification & Screenshots:** `screenshots/service-connectivity.png`
+**Verification & Screenshots:**
+
+![Service connectivity](screenshots/service-connectivity.png)
 
 ---
 
@@ -232,7 +234,9 @@ Pod IP
 Container Port
 ```
 
-**Verification & Screenshots:** `screenshots/dns-service-discovery.png`
+**Verification & Screenshots:**
+
+![DNS service discovery](screenshots/dns-service-discovery.png)
 
 ---
 
@@ -251,7 +255,9 @@ kubectl get serviceaccounts -n security-app
 
 ServiceAccounts provide an identity for workloads running inside Kubernetes.
 
-**Verification & Screenshots:** `screenshots/service-accounts.png`
+**Verification & Screenshots:**
+
+![ServiceAccounts](screenshots/service-accounts.png)
 
 ---
 
@@ -314,8 +320,9 @@ no
 ```
 
 **Verification & Screenshots:**
-- `screenshots/frontend-allowed.png`
-- `screenshots/frontend-denied.png`
+
+![Frontend allowed](screenshots/frontend-allowed.png)
+![Frontend denied](screenshots/frontend-denied.png)
 
 ---
 
@@ -461,7 +468,9 @@ The command succeeded and returned the running pods.
 
 This proves that the Kubernetes API authenticated the user using the configured client certificate.
 
-**Verification & Screenshots:** `screenshots/dev-user-context.png`
+**Verification & Screenshots:**
+
+![Dev-user context](screenshots/dev-user-context.png)
 
 ### Namespace Authorization Test
 
@@ -490,8 +499,9 @@ Namespace restriction
 ```
 
 **Verification & Screenshots:**
-<!-- - `screenshots/certificate-auth.png` -->
-- `screenshots/cross-namespace-denied.png`
+
+<!-- ![Certificate auth](screenshots/certificate-auth.png) -->
+![Cross-namespace denied](screenshots/cross-namespace-denied.png)
 
 ---
 
@@ -550,8 +560,9 @@ no
 ```
 
 **Verification & Screenshots:**
-- `screenshots/dev-user-allowed.png`
-- `screenshots/dev-user-denied.png`
+
+![Dev-user allowed](screenshots/dev-user-allowed.png)
+![Dev-user denied](screenshots/dev-user-denied.png)
 
 ---
 
@@ -584,9 +595,10 @@ Topics to demonstrate:
 - Pod-level vs container-level security settings
 
 **Verification & Screenshots:**
-- `screenshots/security-context/root-user.png`
-- `screenshots/security-context/non-root-user.png`
-- `screenshots/security-context/troubleshooting.png`
+
+![Root user](screenshots/security-context/root-user.png)
+![Non-root user](screenshots/security-context/non-root-user.png)
+![Security context troubleshooting](screenshots/security-context/troubleshooting.png)
 
 ---
 
@@ -608,7 +620,9 @@ kubectl describe pod <pod-name> -n security-app
 kubectl get pod <pod-name> -n security-app -o yaml
 ```
 
-**Verification & Screenshots:** `screenshots/security-context/image-security.png`
+**Verification & Screenshots:**
+
+![Image security](screenshots/security-context/image-security.png)
 
 ---
 
@@ -634,8 +648,9 @@ kubectl describe secret <secret-name> -n security-app
 Secret values should not be exposed in screenshots or committed to Git.
 
 **Verification & Screenshots:**
-- `screenshots/secrets/postgres-secret.png`
-- `screenshots/secrets/secret-consumption.png`
+
+![Postgres secret](screenshots/secrets/postgres-secret.png)
+![Secret consumption](screenshots/secrets/secret-consumption.png)
 
 ---
 
@@ -668,9 +683,10 @@ kubectl describe networkpolicy <policy-name> -n security-app
 ```
 
 **Verification & Screenshots:**
-- `screenshots/network-policy/policy.png`
-- `screenshots/network-policy/allowed-traffic.png`
-- `screenshots/network-policy/blocked-traffic.png`
+
+![NetworkPolicy](screenshots/network-policy/policy.png)
+![Allowed traffic](screenshots/network-policy/allowed-traffic.png)
+![Blocked traffic](screenshots/network-policy/blocked-traffic.png)
 
 ---
 
@@ -712,10 +728,11 @@ kubectl describe pvc <pvc-name> -n security-app
 ```
 
 **Verification & Screenshots:**
-- `screenshots/storage/pv.png`
-- `screenshots/storage/pvc.png`
-- `screenshots/storage/storageclass.png`
-- `screenshots/storage/postgres-persistence.png`
+
+![PersistentVolume](screenshots/storage/pv.png)
+![PersistentVolumeClaim](screenshots/storage/pvc.png)
+![StorageClass](screenshots/storage/storageclass.png)
+![Postgres persistence](screenshots/storage/postgres-persistence.png)
 
 ---
 
@@ -742,9 +759,10 @@ kubectl describe svc <service-name> -n security-app
 ```
 
 **Verification & Screenshots:**
-- `screenshots/networking/pod-networking.png`
-- `screenshots/networking/endpoints.png`
-- `screenshots/networking/ingress.png`
+
+![Pod networking](screenshots/networking/pod-networking.png)
+![Endpoints](screenshots/networking/endpoints.png)
+![Ingress](screenshots/networking/ingress.png)
 
 ---
 
@@ -886,6 +904,7 @@ backend-...                  1/1     Running
 frontend-...                 1/1     Running
 postgres-...                 1/1     Running
 ```
+![Certificate authentication](screenshots/authentication/dev-user-context.png)
 ````
 
 ### Screenshot Guidelines
@@ -897,7 +916,7 @@ Screenshots should:
 - avoid unnecessary terminal output
 - avoid exposing passwords, tokens, private keys, or Secret values
 - use descriptive filenames
-- be referenced directly from the README
+- be embedded directly in the README with `![alt text](path)`, not just linked as text
 
 ---
 
