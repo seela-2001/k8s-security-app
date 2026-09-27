@@ -13,9 +13,16 @@ spec:
       labels:
         app: backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      imagePullSecrets:
+        - name: security-app
       containers:
         - name: backend
-          image: hashicorp/http-echo:1.0
+          image: sohila12/k8s-security-backend:1.0
+          imagePullPolicy: IfNotPresent
           args:
             - "-text=Hello from backend"
           ports:

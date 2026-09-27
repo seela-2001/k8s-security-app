@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-network-policy
+  namespace: security-app
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            app: frontend
+      
+        namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: security-app
+      ports: 
+        - protocol: TCP
+          port: 5678 
+
