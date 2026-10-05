@@ -63,7 +63,7 @@ The backend intentionally does **not** connect to PostgreSQL. PostgreSQL is used
 │   ├── backend-service.yaml
 │   ├── frontend-deployment.yaml
 │   ├── namespace.yaml
-│   ├── postgres-deployment.yaml
+│   ├── postgres-statefulssets.yaml
 │   └── postgres-service.yaml
 │
 ├── networking/
