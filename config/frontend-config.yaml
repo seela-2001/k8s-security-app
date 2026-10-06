@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-configmap
+  namespace: security-app
+
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+      <head><title>K8s Security Lab</title></head>
+      <body>
+        <h1>K8s Security Lab</h1>
+        <p>Served by nginx through the Ingress, content from a ConfigMap.</p>
+      </body>
+    </html>

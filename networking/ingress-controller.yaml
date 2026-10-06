@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-controller
+  namespace: security-app
+spec:
+  tls: 
+    - hosts: [security-app.local]
+      secretName: security-app-tls
+  ingressClassName: nginx
+  rules:
+    - host: security-app.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port: 
+                  number: 5678
+
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

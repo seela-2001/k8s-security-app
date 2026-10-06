@@ -1,1 +1,3 @@
 dev-user.key
+tls.key
+postgres-secret.yaml
