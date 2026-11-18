@@ -58,7 +58,7 @@ k8s-security-app/
 │   ├── backend-deployment.yaml
 │   ├── backend-service.yaml
 │   ├── postgres-service.yaml
-│   └── postgres-statefullsets.yaml
+│   └── postgres-statefulsets.yaml
 │
 ├── networking/
 │   └── ingress-controller.yaml
@@ -88,24 +88,20 @@ k8s-security-app/
 │   │   ├── cluster-rolebinding.yaml
 │   │   ├── frontend-role.yaml
 │   │   └── frontend-rolebinding.yaml
-│   │
-│   └── security-context/
-│
+|
+|
 ├── storage/
 │   ├── postgres-pv.yaml
 │   └── storage-class.yaml
 │
 ├── screenshots/
-├── tests/
-├── task.py
 └── README.md
 ```
 
 **Repository notes:**
-- PostgreSQL is managed through a StatefulSet; there is no separate PostgreSQL Deployment manifest in the current repository.
-- `postgres-statefullsets.yaml` and `frontend-service-accoutn.yaml` retain their current filenames. Their spelling can be corrected as a separate cleanup.
-- `cluster-rolebinding.yaml` currently defines a **RoleBinding**, not a ClusterRoleBinding.
-- The `security-context/` directory is currently empty; Security Context implementation is not claimed as a completed feature.
+- PostgreSQL is managed through a StatefulSet.
+- `cluster-rolebinding.yaml` defines a RoleBinding, not a ClusterRoleBinding.
+- PostgreSQL storage uses StatefulSet `volumeClaimTemplates` with the `postgres-storage` StorageClass.
 
 ## Implementation Highlights
 
@@ -147,6 +143,15 @@ Additional configuration:
 - TLS configuration referencing the `security-app-tls` Secret.
 - Path-based routing to multiple application components.
 
+```bash
+kubectl get ingress -n security-app
+
+echo "$(minikube ip) security-app.local" | sudo tee -a /etc/hosts
+
+curl -k https://security-app.local
+curl -k https://security-app.local/api
+```
+
 Manifest: `networking/ingress-controller.yaml`
 
 ### 3. Persistent Storage & StatefulSets
@@ -166,9 +171,19 @@ The StatefulSet requests a separate 1Gi PVC for each replica through `volumeClai
 
 The repository also contains a static 3Gi HostPath PersistentVolume definition and a `postgres-storage` StorageClass configuration.
 
-**Important:** The static PV and the StatefulSet's dynamically requested PVCs are separate configurations. Successful binding and dynamic provisioning should be verified against the actual cluster resources before claiming that both storage paths are active.
+**Important:** The PostgreSQL StatefulSet uses `volumeClaimTemplates` to request a separate 1Gi PersistentVolumeClaim for each replica through the `postgres-storage` StorageClass.
 
-The two PostgreSQL replicas have separate data directories. This configuration does not implement PostgreSQL replication or database high availability.
+Each PostgreSQL Pod receives its own persistent storage claim and data directory.
+
+This setup does not implement PostgreSQL replication or database high availability.
+
+Useful commands:
+
+```bash
+kubectl get pv,pvc -n security-app
+kubectl get storageclass
+kubectl get statefulsets -n security-app
+```
 
 Useful commands:
 
@@ -234,24 +249,33 @@ This demonstrates separating application configuration from container image defi
 
 ### 6. NetworkPolicies
 
-Created NetworkPolicy resources to define the intended communication boundaries between application components.
+NetworkPolicies are configured to control communication between application components.
 
-The configured rules include:
+| Source | Destination | Protocol / Port | Access |
+|---|---|---|---|
+| Frontend | Backend | TCP 5678 | Allowed |
+| Backend | PostgreSQL | TCP 5432 | Allowed |
+| Frontend | PostgreSQL | TCP 5432 | Denied |
+| Frontend | CoreDNS | TCP/UDP 53 | Allowed |
 
-- Frontend Egress to Backend on TCP port `5678`.
-- Frontend DNS Egress to CoreDNS on TCP/UDP port `53`.
-- Backend Ingress from Frontend.
-- PostgreSQL Ingress from Backend.
+### Enable NetworkPolicy Support with Calico
 
-**Important:** NetworkPolicy resources are present in the repository, but enforcement depends on CNI support. The presence of these manifests alone does not prove that traffic restrictions are enforced.
+Start Minikube using Calico as the CNI plugin:
 
-Actual allowed and denied traffic must be verified using a NetworkPolicy-compatible CNI plugin before claiming successful enforcement.
+```bash
+minikube start --cni=calico
+```
 
-Useful command:
+Apply the NetworkPolicy manifests:
+
+```bash
+kubectl apply -f security/network-policy/
+```
+
+Check the configured policies:
 
 ```bash
 kubectl get networkpolicies -n security-app
-kubectl describe networkpolicy frontend-network-policy -n security-app
 ```
 
 ## Troubleshooting & Problem Solving
