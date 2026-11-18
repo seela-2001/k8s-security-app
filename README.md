@@ -1,84 +1,67 @@
 # Kubernetes Security, Storage & Networking Lab
 
-A hands-on Kubernetes project built as part of my **Certified Kubernetes Administrator (CKA)** preparation, following Mumshad Mannambeth's Kubernetes course.
+A hands-on Kubernetes project built as part of my **CKA exam curriculum**, following Mumshad Mannambeth's Kubernetes course.
 
-The project focuses on understanding Kubernetes concepts through practical implementation, troubleshooting, and verification — not just writing YAML manifests.
+The project focuses on implementing and troubleshooting Kubernetes concepts through practical scenarios, resource configuration, access-control testing, and network connectivity verification.
 
 ## Project Overview
 
-This lab uses a simple multi-tier application to explore how Kubernetes manages workloads, networking, persistent storage, and access control.
+This lab uses a lightweight multi-tier application to practice Kubernetes administration and infrastructure concepts.
 
-The main components are:
-
+**Main Components:**
 - **Frontend:** NGINX-based application.
 - **Backend:** HTTP Echo service.
-- **Database:** PostgreSQL.
+- **Database:** PostgreSQL StatefulSet.
 - **Namespace:** `security-app`.
 - **Cluster:** Minikube.
 
-The application is intentionally lightweight. The focus is on Kubernetes administration and infrastructure concepts rather than application development.
+The primary focus is Kubernetes administration rather than application development.
 
 ## Architecture
 
-```text
-                    Kubernetes Cluster
-                    Namespace: security-app
+![Kubernetes Architecture](screenshots/kubernetes-architecture.png)
 
-                         Frontend
-                        (NGINX Pods)
-                             |
-                             | HTTP
-                             v
-                     backend-service
-                             |
-                             v
-                        Backend Pods
-                       (HTTP Echo)
-                             |
-                             | PostgreSQL
-                             v
-                    postgres-service
-                             |
-                             v
-                       PostgreSQL
-                      (StatefulSet)
-                             |
-                             v
-                    Persistent Storage
-                      PVC / PV
-                    StorageClass
-```
+**Ingress Routing:**
 
-**Note:** PostgreSQL is deployed as a separate workload for storage and networking exercises. The backend is not configured as an application-level PostgreSQL client.
+![Ingress Routing](screenshots/ingress-routing.png)
+
+**Note:** PostgreSQL is deployed separately for storage and networking exercises. The backend is not configured as an application-level PostgreSQL client.
 
 ## Technologies & Kubernetes Concepts
 
-| Area | Concepts Practiced |
+| Area | Concepts Implemented |
 |---|---|
 | Workloads | Pods, Deployments, StatefulSets, ReplicaSets |
-| Networking | Services, ClusterIP, Pod-to-Pod communication, DNS, Service Discovery |
+| Networking | Services, ClusterIP, Pod networking, DNS, Service Discovery, EndpointSlices |
+| Ingress | NGINX Ingress, Path-based Routing, TLS |
 | Network Security | NetworkPolicies, Ingress and Egress rules |
-| Storage | PersistentVolumes, PersistentVolumeClaims, StorageClasses, Dynamic Provisioning |
-| Authentication | ServiceAccounts, Kubernetes authentication, client certificates |
+| Storage | PersistentVolumes, PersistentVolumeClaims, StorageClasses, StatefulSet volumeClaimTemplates |
+| Authentication | ServiceAccounts, CertificateSigningRequests, Client Certificates, Kubeconfig |
 | Authorization | RBAC, Roles, ClusterRoles, RoleBindings, ClusterRoleBindings |
 | Configuration | ConfigMaps and Secrets |
-| Troubleshooting | Pod failures, CrashLoopBackOff, service connectivity, storage and networking issues |
+| Troubleshooting | Pod failures, CrashLoopBackOff, Service connectivity, RBAC permission errors, storage issues |
 
 ## Repository Structure
 
 ```text
 k8s-security-app/
 │
+├── config/
+│   ├── frontend-config.yaml
+│   ├── postgres-config.yaml
+│   └── postgres-secret.yaml
+│
 ├── manifests/
 │   ├── namespace.yaml
 │   ├── frontend-deployment.yaml
+│   ├── frontend-service.yaml
 │   ├── backend-deployment.yaml
 │   ├── backend-service.yaml
-│   ├── postgres-deployment.yaml
-│   ├── postgres-statefullsets.yaml
-│   └── postgres-service.yaml
+│   ├── postgres-service.yaml
+│   └── postgres-statefullsets.yaml
 │
 ├── networking/
+│   └── ingress-controller.yaml
 │
 ├── security/
 │   ├── authentication/
@@ -86,6 +69,11 @@ k8s-security-app/
 │   │   └── frontend-service-accoutn.yaml
 │   │
 │   ├── certificates/
+│   │   ├── dev-user.crt
+│   │   ├── dev-user.csr
+│   │   ├── dev-user.key
+│   │   ├── tls.crt
+│   │   └── tls.key
 │   │
 │   ├── network-policy/
 │   │   ├── frontend-network-policy.yaml
@@ -105,29 +93,33 @@ k8s-security-app/
 │
 ├── storage/
 │   ├── postgres-pv.yaml
-│   ├── postgres-pvc.yaml
 │   └── storage-class.yaml
 │
 ├── screenshots/
-│
 ├── tests/
+├── task.py
 └── README.md
 ```
 
+**Repository notes:**
+- PostgreSQL is managed through a StatefulSet; there is no separate PostgreSQL Deployment manifest in the current repository.
+- `postgres-statefullsets.yaml` and `frontend-service-accoutn.yaml` retain their current filenames. Their spelling can be corrected as a separate cleanup.
+- `cluster-rolebinding.yaml` currently defines a **RoleBinding**, not a ClusterRoleBinding.
+- The `security-context/` directory is currently empty; Security Context implementation is not claimed as a completed feature.
+
 ## Implementation Highlights
 
-### 1. Kubernetes Networking
+### 1. Kubernetes Networking & Service Discovery
 
-Implemented Kubernetes Services to provide stable network access to application workloads.
+Implemented Kubernetes Services to provide stable access to application workloads.
 
-Practiced:
-
+**Practiced and verified:**
 - Service selectors and target ports.
 - Pod IP addresses and service endpoints.
 - Internal communication between application components.
 - DNS-based service discovery.
 - Endpoint and EndpointSlice inspection.
-- NetworkPolicy ingress and egress rules.
+- Connectivity testing between Frontend and Backend.
 
 Useful commands:
 
@@ -135,94 +127,187 @@ Useful commands:
 kubectl get pods -n security-app -o wide
 kubectl get svc -n security-app
 kubectl get endpointslices -n security-app
-kubectl get networkpolicies -n security-app
+kubectl describe svc backend-service -n security-app
 ```
 
-### 2. Persistent Storage
+### 2. Ingress & TLS
 
-Explored Kubernetes persistent storage using PostgreSQL as a stateful workload.
+Configured an NGINX Ingress resource to route external HTTP traffic to internal Kubernetes Services.
 
-Practiced:
+**Implemented routing rules:**
 
+| Path | Backend Service | Port |
+|---|---|---:|
+| `/` | frontend-service | 80 |
+| `/api` | backend-service | 5678 |
+
+Additional configuration:
+- Host-based routing using `security-app.local`.
+- NGINX Ingress Class.
+- TLS configuration referencing the `security-app-tls` Secret.
+- Path-based routing to multiple application components.
+
+Manifest: `networking/ingress-controller.yaml`
+
+### 3. Persistent Storage & StatefulSets
+
+Configured PostgreSQL as a Kubernetes StatefulSet to understand persistent storage for stateful workloads.
+
+**Implemented:**
 - PersistentVolumes (PV).
-- PersistentVolumeClaims (PVC).
-- StorageClasses.
-- Static and dynamic provisioning.
-- Persistent storage integration with Pods.
-- StatefulSet storage using volume claim templates.
+- StorageClass configuration.
+- StatefulSet `volumeClaimTemplates`.
+- Individual PVC requests for StatefulSet replicas.
+- Persistent volume mounting inside PostgreSQL containers.
+- `ReadWriteOnce` access mode.
+- `Retain` reclaim policy in the static PV configuration.
 
-The goal was to understand how storage is provisioned, claimed, and mounted into stateful workloads.
+The StatefulSet requests a separate 1Gi PVC for each replica through `volumeClaimTemplates`.
 
-### 3. Authentication & Authorization
+The repository also contains a static 3Gi HostPath PersistentVolume definition and a `postgres-storage` StorageClass configuration.
 
-Implemented Kubernetes access-control scenarios using ServiceAccounts and RBAC.
+**Important:** The static PV and the StatefulSet's dynamically requested PVCs are separate configurations. Successful binding and dynamic provisioning should be verified against the actual cluster resources before claiming that both storage paths are active.
 
-Practiced:
+The two PostgreSQL replicas have separate data directories. This configuration does not implement PostgreSQL replication or database high availability.
 
+Useful commands:
+
+```bash
+kubectl get pv
+kubectl get pvc -n security-app
+kubectl get storageclass
+kubectl describe pvc -n security-app
+```
+
+### 4. Authentication & Authorization (RBAC)
+
+Implemented Kubernetes access-control scenarios using ServiceAccounts, client certificates, Roles, ClusterRoles, and bindings.
+
+**Implemented:**
 - Creating and assigning ServiceAccounts.
-- Creating Roles and ClusterRoles.
-- Binding permissions with RoleBindings and ClusterRoleBindings.
+- Configuring Roles and ClusterRoles.
+- Binding permissions with RoleBindings.
 - Generating and submitting CertificateSigningRequests.
-- Testing user permissions with `kubectl auth can-i`.
-- Configuring and using a separate Kubernetes user context.
+- Creating a separate Kubernetes user named `dev-user`.
+- Configuring and using a separate kubeconfig context.
+- Testing permissions using `kubectl auth can-i`.
 
-Example:
+**dev-user Role permissions:**
+
+The `dev-user-role` grants permissions to:
+- Get, list, watch, and create Pods.
+- Get, list, watch, and create Deployments and ReplicaSets.
+
+It does not grant the `delete` verb on Pods.
+
+**ClusterRole scenario:**
+
+A ClusterRole named `cluster-pod-reader` defines additional permissions for Pods, Deployments, and ReplicaSets. It is associated with the `cluster-reader-sa` ServiceAccount through a namespaced RoleBinding.
+
+This demonstrates the distinction between ClusterRole definitions and the scope of RoleBindings.
+
+Example commands:
 
 ```bash
 kubectl auth can-i get pods -n security-app
 kubectl auth can-i delete pods -n security-app
 kubectl config get-contexts
+kubectl get csr
 ```
 
-### 4. Network Policies
+### 5. ConfigMaps & Secrets
 
-Created NetworkPolicies to define permitted communication between application components.
+Configured application settings using Kubernetes ConfigMaps and Secrets.
 
-The intended traffic flow:
+**ConfigMaps:**
+- `frontend-config`
+- `postgres-config`
 
-| Source | Destination | Port | Expected Access |
-|---|---|---:|---|
-| Frontend | Backend | 5678 | Allowed |
-| Backend | PostgreSQL | 5432 | Allowed |
-| Frontend | PostgreSQL | 5432 | Denied |
-| Frontend / Backend | CoreDNS | 53 | DNS traffic allowed |
+**Secret:**
+- `postgres-secret`
 
-**Important:** NetworkPolicy enforcement depends on the cluster's CNI plugin. Applying a NetworkPolicy resource alone does not guarantee that traffic is restricted. Enforcement must be verified in a compatible cluster.
+PostgreSQL consumes configuration through `envFrom`, referencing both its ConfigMap and Secret.
 
-## Troubleshooting & Validation
+This demonstrates separating application configuration from container image definitions.
 
-A major part of this project was investigating Kubernetes behavior when things did not work as expected.
+**Security note:** Kubernetes Secret values encoded in YAML using Base64 are encoded, not automatically encrypted. Sensitive values should not be committed to public repositories.
 
-Examples include:
+### 6. NetworkPolicies
 
-- Investigating why Services had no endpoints.
-- Debugging Pods in `CrashLoopBackOff`.
-- Inspecting container logs and Pod events.
-- Troubleshooting PostgreSQL persistent data and WAL recovery errors.
-- Understanding PVC access modes and why multiple PostgreSQL instances should not share the same data directory.
-- Investigating NetworkPolicy enforcement and CNI compatibility.
-- Verifying connectivity using `wget`, `nc`, and `kubectl exec`.
+Created NetworkPolicy resources to define the intended communication boundaries between application components.
 
-The troubleshooting process followed:
+The configured rules include:
 
-```text
-Identify the issue
-       |
-       v
-Inspect Kubernetes resources
-       |
-       v
-Check logs and events
-       |
-       v
-Find the root cause
-       |
-       v
-Apply a fix
-       |
-       v
-Verify the result
+- Frontend Egress to Backend on TCP port `5678`.
+- Frontend DNS Egress to CoreDNS on TCP/UDP port `53`.
+- Backend Ingress from Frontend.
+- PostgreSQL Ingress from Backend.
+
+**Important:** NetworkPolicy resources are present in the repository, but enforcement depends on CNI support. The presence of these manifests alone does not prove that traffic restrictions are enforced.
+
+Actual allowed and denied traffic must be verified using a NetworkPolicy-compatible CNI plugin before claiming successful enforcement.
+
+Useful command:
+
+```bash
+kubectl get networkpolicies -n security-app
+kubectl describe networkpolicy frontend-network-policy -n security-app
 ```
+
+## Troubleshooting & Problem Solving
+
+A significant part of this project involved investigating Kubernetes errors and understanding why resources behaved differently from expectations.
+
+### 1. Service Port Mismatch
+
+Encountered a connectivity issue caused by a mismatch between Service ports and the ports exposed by the target application.
+
+**Troubleshooting approach:**
+- Inspected Service configuration.
+- Checked `port` and `targetPort`.
+- Verified Pod listening ports.
+- Tested connectivity from within the cluster.
+
+### 2. RBAC Resource Name Errors
+
+Encountered RBAC permission configuration issues, including using `pod` instead of the correct plural resource name `pods`.
+
+**Troubleshooting approach:**
+- Inspected Role rules.
+- Checked API resource names.
+- Verified permissions using `kubectl auth can-i`.
+
+### 3. Role vs. ClusterRole
+
+Investigated the difference between namespaced Roles and ClusterRoles, including how bindings determine the scope of granted permissions.
+
+**Key takeaway:** A ClusterRole can be referenced by a RoleBinding, but the resulting permissions are limited to the RoleBinding's namespace.
+
+### 4. dev-user Permission Testing
+
+Tested the separate `dev-user` Kubernetes identity and verified authorization boundaries.
+
+Scenarios included:
+- Accessing permitted resources inside `security-app`.
+- Receiving `Forbidden` responses when attempting operations outside the user's granted permissions.
+- Verifying that deleting Pods was not allowed by the assigned Role.
+
+### 5. PostgreSQL Storage & Pod Failures
+
+Investigated PostgreSQL Pods entering `CrashLoopBackOff`.
+
+The investigation included:
+- Inspecting container logs.
+- Identifying PostgreSQL WAL and checkpoint recovery errors.
+- Checking PersistentVolume and PersistentVolumeClaim configuration.
+- Understanding why multiple PostgreSQL instances should not share the same database data directory.
+- Using StatefulSet volume claim templates to request separate storage per replica.
+
+### 6. NetworkPolicy & CNI Compatibility
+
+Investigated why applying NetworkPolicy resources did not necessarily block traffic.
+
+**Key takeaway:** NetworkPolicy enforcement requires a compatible CNI implementation. Creating the Kubernetes resources alone is not sufficient.
 
 ## Screenshots & Proof of Implementation
 
@@ -233,7 +318,9 @@ The `screenshots/` directory contains evidence from practical exercises, includi
 - RBAC allowed and denied operations.
 - ServiceAccount configuration.
 - Cross-namespace access tests.
-- Network connectivity tests.
+- `dev-user` authentication and authorization tests.
+
+Additional storage and NetworkPolicy enforcement screenshots can be added after validating the corresponding scenarios.
 
 ## Running the Lab
 
@@ -244,7 +331,7 @@ The `screenshots/` directory contains evidence from practical exercises, includi
 - kubectl
 - Basic Linux command-line knowledge
 
-### Start the Cluster
+### Start Minikube
 
 ```bash
 minikube start
@@ -256,35 +343,65 @@ minikube start
 kubectl apply -f manifests/namespace.yaml
 ```
 
-### Deploy the Workloads
+### Apply Configuration
+
+```bash
+kubectl apply -f config/
+```
+
+### Deploy Application Workloads
 
 ```bash
 kubectl apply -f manifests/
 ```
 
-Apply the required storage resources and security manifests according to their dependencies and the selected PostgreSQL storage configuration.
+### Apply Storage Resources
 
-### Verify the Resources
+```bash
+kubectl apply -f storage/storage-class.yaml
+kubectl apply -f storage/postgres-pv.yaml
+```
+
+### Apply Security Resources
+
+Apply the required authentication, RBAC, and NetworkPolicy manifests according to their dependencies.
+
+### Configure Ingress
+
+Ensure the NGINX Ingress Controller is installed and running, then apply:
+
+```bash
+kubectl apply -f networking/ingress-controller.yaml
+```
+
+TLS configuration also requires the referenced `security-app-tls` Secret to exist.
+
+### Verify Resources
 
 ```bash
 kubectl get all -n security-app
 kubectl get pv
 kubectl get pvc -n security-app
 kubectl get storageclass
+kubectl get ingress -n security-app
 kubectl get networkpolicies -n security-app
 ```
+
+**Note:** The commands above describe the main deployment workflow. Apply resources in the appropriate order and verify storage provisioning, TLS configuration, and CNI support for your Minikube setup.
 
 ## Key Takeaways
 
 Through this project, I gained practical experience with:
 
-- Understanding how Kubernetes networking connects Pods and Services.
-- Working with DNS and service discovery.
-- Managing persistent storage for stateful workloads.
-- Understanding the difference between Deployments and StatefulSets.
-- Implementing authentication and authorization with RBAC.
-- Restricting workload communication using NetworkPolicies.
-- Troubleshooting real Kubernetes issues using logs, events, and resource inspection.
+- Deploying and managing Kubernetes workloads.
+- Understanding Kubernetes networking, Services, DNS, and Ingress.
+- Configuring TLS and path-based routing.
+- Managing stateful workloads using StatefulSets and persistent storage.
+- Working with PVs, PVCs, and StorageClasses.
+- Implementing authentication and authorization using RBAC.
+- Managing application configuration with ConfigMaps and Secrets.
+- Defining workload communication policies using NetworkPolicies.
+- Troubleshooting real Kubernetes issues through logs, events, resource inspection, and permission testing.
 
 ## Learning Resources
 
